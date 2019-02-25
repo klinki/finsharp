@@ -1,0 +1,2 @@
+# finsharp
+Fin# - Finantial API
