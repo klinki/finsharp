@@ -11,8 +11,8 @@ namespace PragueStockExchangeApiTest
         [TestMethod]
         public async Task TestMethod1()
         {
-            PragueStockExchangeApiClient client = new PragueStockExchangeApiClient();
-            await client.GetData(DateTime.Now);
+            PragueStockExchangeFinSharpClient client = new PragueStockExchangeFinSharpClient();
+            // await client.GetInvestmentRecordsAsync(DateTime.Now);
         }
     }
 }

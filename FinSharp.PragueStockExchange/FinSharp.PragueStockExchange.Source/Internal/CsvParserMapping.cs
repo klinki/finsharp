@@ -1,10 +1,30 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using TinyCsvParser.Mapping;
 using TinyCsvParser.TypeConverter;
 
-namespace FinSharp.PragueStockExchange
+[assembly: InternalsVisibleTo("FinSharp.PragueStockExchange.Tests")]
+namespace FinSharp.PragueStockExchange.Internal
 {
-    public class CustomDecimalConverter : ITypeConverter<decimal>
+    internal class TrimmingStringConverter : ITypeConverter<string>
+    {
+        public Type TargetType { get; set; }
+
+        public bool TryConvert(string value, out string result)
+        {
+            bool isValueIsNotNull = value != null;
+            result = string.Empty;
+
+            if (isValueIsNotNull)
+            {
+                result = value.Trim();
+            }
+
+            return isValueIsNotNull;
+        }
+    }
+
+    internal class CustomDecimalConverter : ITypeConverter<decimal>
     {
         public Type TargetType { get; set; }
 
@@ -20,14 +40,14 @@ namespace FinSharp.PragueStockExchange
         }
     }
 
-    public class CsvParserMapping : CsvMapping<PragueStockExchangeCsvRow>
+    internal class CsvParserMapping : CsvMapping<PragueStockExchangeCsvRow>
     {
         public CsvParserMapping(): base()
         {
-            MapProperty(0, x => x.ISIN); // Example: "AT0000A1AVN7",
-            MapProperty(1, x => x.Name); // Example: "EB GLD TL9        ",
-            MapProperty(2, x => x.BIC); // Example: "        ",
-            MapProperty(3, x => x.Date, new TinyCsvParser.TypeConverter.DateTimeConverter("yyyy/MM/dd")); // "2019/01/10",
+            MapProperty(0, x => x.ISIN, new TrimmingStringConverter()); // Example: "AT0000A1AVN7",
+            MapProperty(1, x => x.Name, new TrimmingStringConverter()); // Example: "EB GLD TL9        ",
+            MapProperty(2, x => x.BIC, new TrimmingStringConverter()); // Example: "        ",
+            MapProperty(3, x => x.Date, new DateTimeConverter("yyyy/MM/dd")); // "2019/01/10",
             MapProperty(4, x => x.Close); // 383.81         ,
             MapProperty(5, x => x.Change); // -.03     ,
             MapProperty(6, x => x.Previous); // 383.94         ,
@@ -35,7 +55,7 @@ namespace FinSharp.PragueStockExchange
             MapProperty(8, x => x.YearMax); // 597.31         ,
             MapProperty(9, x => x.Volume);  // 0            ,
             MapProperty(10, x => x.TradedAmount, new CustomDecimalConverter()); // .00                ,
-            MapProperty(11, x => x.LastTrade, new TinyCsvParser.TypeConverter.DateTimeConverter("yyyy/MM/dd")); // "2018/12/28",
+            MapProperty(11, x => x.LastTrade, new DateTimeConverter("yyyy/MM/dd")); // "2018/12/28",
             MapProperty(12, x => x.MarketGroup); // "E",
             MapProperty(13, x => x.Mode); // "2",
             MapProperty(14, x => x.MarketCode); // "F",

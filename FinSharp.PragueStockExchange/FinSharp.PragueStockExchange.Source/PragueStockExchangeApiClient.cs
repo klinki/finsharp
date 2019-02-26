@@ -1,58 +1,39 @@
-﻿using System;
+﻿using FinSharp.PragueStockExchange.Internal;
+using Flurl.Http;
+using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.IO;
 using System.IO.Compression;
-using FinSharp.Api.Entities;
-using FinSharp.Api;
-using Flurl;
-using Flurl.Http;
-using TinyCsvParser;
-using System.Text;
-using System.Linq;
+using System.Threading.Tasks;
 
-namespace FinSharp.PragueStockExchange
+namespace FinSharp.PragueStockExchange.Source
 {
-    public class PragueStockExchangeApiException : Exception, IInvestmentApiException
-    {
-        public PragueStockExchangeApiException(): base() { }
-
-        public PragueStockExchangeApiException(string message): base(message) { }
-    }
-
     public interface IPragueStockExchangeApiConfiguration
     {
 
     }
 
-    public class PragueStockExchangeApiClient : IInvestmentApi
+    public class PragueStockExchangeApiClient
     {
+        private PragueStockExchangeCsvParser _parser;
+
         const string API_URL = "http://ftp.pse.cz/results.ak";
         const string ZIP_FILE_NAME = "pl{DATE}.zip";
         const string RESULT_FILE_NAME = "AK{DATE}.csv";
         const string DATE_FORMAT = "yyMMdd";
         const int MIN_YEAR = 2013;
 
-        protected string GetFileUrl(DateTime date)
+        internal PragueStockExchangeApiClient(PragueStockExchangeCsvParser parser)
         {
-            string url = API_URL;
-
-            if (date.Year != DateTime.Now.Year)
-            {
-                url += "/" + date.Year.ToString();
-            }
-
-            url += "/" + ZIP_FILE_NAME.Replace("{DATE}", date.ToString(DATE_FORMAT));
-
-            return url;
+            _parser = parser;
         }
+
+        public PragueStockExchangeApiClient(): this(new PragueStockExchangeCsvParser())
+        { }
 
         public async Task<IEnumerable<PragueStockExchangeCsvRow>> GetData(DateTime date)
         {
-            if (date.Year < MIN_YEAR)
-            {
-                throw new PragueStockExchangeApiException($"Cannot download data prior to year ${MIN_YEAR}");
-            }
+            ValidateDate(date);
 
             string url = GetFileUrl(date);
             string filePath = await url.DownloadFileAsync(Path.GetTempPath());
@@ -76,61 +57,35 @@ namespace FinSharp.PragueStockExchange
                 }
             }
 
-            CsvParserOptions options = new CsvParserOptions(false, ',');
-            CsvParserMapping mapping = new CsvParserMapping();
-            CsvParser<PragueStockExchangeCsvRow> parser = new CsvParser<PragueStockExchangeCsvRow>(options, mapping);
-
-            var result = parser.ReadFromFile(destinationPath, Encoding.ASCII).ToList();
-            return result.Select(x => x.Result);
+            PragueStockExchangeCsvParser parser = new PragueStockExchangeCsvParser();
+            return parser.GetDataFromFile(destinationPath);
         }
 
-        public IEnumerable<InvestmentRecord> GetInvestmentRecords()
+        protected string GetFileUrl(DateTime date)
         {
-            throw new NotImplementedException();
-        }
+            string url = API_URL;
 
-        public IEnumerable<InvestmentRecord> GetInvestmentRecords(DateTime from, DateTime to)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IEnumerable<InvestmentRecord> GetInvestmentRecords(Investment investment)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IEnumerable<InvestmentRecord> GetInvestmentRecords(Investment investment, DateTime from, DateTime to)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<IEnumerable<InvestmentRecord>> GetInvestmentRecordsAsync(Investment investment, DateTime from, DateTime to)
-        {
-            throw new NotImplementedException();
-        }
-
-        public async Task<IEnumerable<InvestmentRecord>> GetInvestmentRecordsAsync()
-        {
-            var result = await GetData(DateTime.Now);
-            return result.Select(x => new InvestmentRecord
+            if (date.Year != DateTime.Now.Year)
             {
-                Date = x.Date,
-                High = x.DayMax,
-                Low = x.DayMin,
-                Open = x.Open,
-                Close = x.Close,
-                Volume = x.Volume
-            });
+                url += "/" + date.Year.ToString();
+            }
+
+            url += "/" + ZIP_FILE_NAME.Replace("{DATE}", date.ToString(DATE_FORMAT));
+
+            return url;
         }
 
-        public Task<IEnumerable<InvestmentRecord>> GetInvestmentRecordsAsync(DateTime from, DateTime to)
+        protected void ValidateDate(DateTime date)
         {
-            throw new NotImplementedException();
-        }
+            if (date > DateTime.Now)
+            {
+                throw new ArgumentOutOfRangeException(nameof(date), $"Cannot be in future");
+            }
 
-        public Task<IEnumerable<InvestmentRecord>> GetInvestmentRecordsAsync(Investment investment)
-        {
-            throw new NotImplementedException();
+            if (date.Year < MIN_YEAR)
+            {
+                throw new ArgumentOutOfRangeException(nameof(date), $"Minimal year is ${MIN_YEAR}");
+            }
         }
     }
 }

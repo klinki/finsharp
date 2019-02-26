@@ -16,4 +16,10 @@
     <ProjectReference Include="..\FinSharp.PragueStockExchange.Source\FinSharp.PragueStockExchange.Source.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Parser\Data\valid-input.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
