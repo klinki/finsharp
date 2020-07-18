@@ -6,13 +6,8 @@ using System.IO;
 using System.IO.Compression;
 using System.Threading.Tasks;
 
-namespace FinSharp.PragueStockExchange.Source
+namespace FinSharp.PragueStockExchange
 {
-    public interface IPragueStockExchangeApiConfiguration
-    {
-
-    }
-
     public class PragueStockExchangeApiClient
     {
         private PragueStockExchangeCsvParser _parser;
@@ -35,6 +30,22 @@ namespace FinSharp.PragueStockExchange.Source
         {
             ValidateDate(date);
 
+            try
+            {
+                return await GetDataWithoutExceptions(date);
+            }
+            catch (FlurlHttpException e)
+            {
+                throw new DataNotFoundException("Data not found", e);
+            }
+            catch (Exception e)
+            {
+                throw new PragueStockExchangeException("Could not get data", e);
+            }
+        }
+
+        protected async Task<IEnumerable<PragueStockExchangeCsvRow>> GetDataWithoutExceptions(DateTime date)
+        {
             string url = GetFileUrl(date);
             string filePath = await url.DownloadFileAsync(Path.GetTempPath());
 
@@ -75,7 +86,7 @@ namespace FinSharp.PragueStockExchange.Source
             return url;
         }
 
-        protected void ValidateDate(DateTime date)
+        public void ValidateDate(DateTime date)
         {
             if (date > DateTime.Now)
             {
@@ -85,6 +96,11 @@ namespace FinSharp.PragueStockExchange.Source
             if (date.Year < MIN_YEAR)
             {
                 throw new ArgumentOutOfRangeException(nameof(date), $"Minimal year is ${MIN_YEAR}");
+            }
+
+            if (date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday)
+            {
+                throw new ArgumentOutOfRangeException(nameof(date), "Cannot be saturday or sunday, these are not trading days");
             }
         }
     }

@@ -2,6 +2,12 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
+    <PackageId>FinSharp.PragueStockExchange</PackageId>
+    <Version>0.0.2-alpha</Version>
+    <Authors>David Klingenberg</Authors>
+    <Company />
+    <Product>FinSharp.PragueStockExchange</Product>
+    <PackageLicenseUrl>https://opensource.org/licenses/MIT</PackageLicenseUrl>
   </PropertyGroup>
 
   <ItemGroup>

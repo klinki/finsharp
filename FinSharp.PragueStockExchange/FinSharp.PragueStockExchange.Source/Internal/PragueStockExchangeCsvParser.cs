@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using TinyCsvParser;
@@ -20,8 +19,8 @@ namespace FinSharp.PragueStockExchange.Internal
             CsvParser<PragueStockExchangeCsvRow> parser = new CsvParser<PragueStockExchangeCsvRow>(options, mapping);
 
             return parser.ReadFromFile(filePath, Encoding.ASCII)
-                .ToList()
-                .Select(row => row.Result);
+                .Select(row => row.Result)
+                .ToList();
         }
     }
 }
